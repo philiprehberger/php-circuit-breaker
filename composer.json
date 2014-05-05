@@ -1,0 +1,39 @@
+{
+    "name": "philiprehberger/php-circuit-breaker",
+    "description": "Circuit breaker pattern with configurable thresholds and multiple storage backends",
+    "keywords": ["circuit-breaker", "fault-tolerance", "resilience", "retry", "php"],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Philip Rehberger",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "phpstan/phpstan": "^1.12|^2.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhilipRehberger\\CircuitBreaker\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhilipRehberger\\CircuitBreaker\\Tests\\": "tests/"
+        }
+    },
+    "suggest": {
+        "ext-apcu": "Required for APCu storage backend"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
