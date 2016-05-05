@@ -2,6 +2,7 @@
     "name": "philiprehberger/php-circuit-breaker",
     "description": "Circuit breaker pattern with configurable thresholds and multiple storage backends",
     "keywords": ["circuit-breaker", "fault-tolerance", "resilience", "retry", "php"],
+    "homepage": "https://github.com/philiprehberger/php-circuit-breaker",
     "license": "MIT",
     "type": "library",
     "authors": [
@@ -33,6 +34,11 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "lint": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
