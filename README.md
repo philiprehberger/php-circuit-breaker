@@ -71,6 +71,35 @@ try {
 }
 ```
 
+### Per-Key Circuit Breakers
+
+Use `KeyedCircuitBreaker` to manage independent circuit breakers per key (e.g., per endpoint, per tenant):
+
+```php
+use PhilipRehberger\CircuitBreaker\KeyedCircuitBreaker;
+use PhilipRehberger\CircuitBreaker\CircuitConfig;
+use PhilipRehberger\CircuitBreaker\Storage\InMemoryStorage;
+
+$breakers = new KeyedCircuitBreaker(
+    config: new CircuitConfig(failureThreshold: 3, recoveryTimeout: 60),
+    storage: new InMemoryStorage(),
+);
+
+// Each key gets its own independent circuit breaker
+$userResult = $breakers->call('user-api', fn () => fetchUsers());
+$orderResult = $breakers->call('order-api', fn () => fetchOrders());
+
+// Check state or reset individual keys
+$breakers->state('user-api');   // CircuitState::Closed
+$breakers->isOpen('order-api'); // false
+$breakers->reset('user-api');
+$breakers->remove('order-api');
+
+// List all tracked keys
+$breakers->keys();  // ['user-api']
+$breakers->count(); // 1
+```
+
 ### Checking State
 
 ```php
@@ -132,6 +161,22 @@ class RedisStorage implements Storage
 | `->state(): CircuitState` | Get the current circuit state |
 | `->reset(): void` | Reset the circuit to closed |
 | `->trip(): void` | Manually open the circuit |
+
+### KeyedCircuitBreaker
+
+| Method | Description |
+|--------|-------------|
+| `new KeyedCircuitBreaker(CircuitConfig $config, Storage $storage)` | Create a keyed circuit breaker manager |
+| `->call(string $key, callable $fn): mixed` | Execute through the breaker for the given key |
+| `->state(string $key): CircuitState` | Get the state for a specific key |
+| `->isOpen(string $key): bool` | Check if the circuit for a key is open |
+| `->isClosed(string $key): bool` | Check if the circuit for a key is closed |
+| `->isHalfOpen(string $key): bool` | Check if the circuit for a key is half-open |
+| `->reset(string $key): void` | Reset the circuit for a specific key |
+| `->trip(string $key): void` | Manually open the circuit for a specific key |
+| `->remove(string $key): void` | Remove the breaker for a key entirely |
+| `->keys(): string[]` | Get all tracked keys |
+| `->count(): int` | Get the number of tracked keys |
 
 ### CircuitConfig
 
