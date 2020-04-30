@@ -8,9 +8,7 @@ Circuit breaker pattern with configurable thresholds and multiple storage backen
 
 ## Requirements
 
-| Dependency | Version |
-|------------|---------|
-| PHP        | ^8.2    |
+- PHP 8.2+
 
 ## Installation
 
