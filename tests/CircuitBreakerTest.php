@@ -283,4 +283,179 @@ class CircuitBreakerTest extends TestCase
 
         $this->assertTrue($breaker->isClosed());
     }
+
+    public function test_get_stats_returns_initial_zeroes(): void
+    {
+        $breaker = new CircuitBreaker('test-service');
+
+        $stats = $breaker->getStats();
+
+        $this->assertSame(0, $stats['total_calls']);
+        $this->assertSame(0, $stats['successes']);
+        $this->assertSame(0, $stats['failures']);
+        $this->assertNull($stats['last_failure_at']);
+        $this->assertSame('closed', $stats['current_state']);
+    }
+
+    public function test_get_stats_tracks_successes(): void
+    {
+        $breaker = new CircuitBreaker('test-service');
+
+        $breaker->call(fn () => 'ok');
+        $breaker->call(fn () => 'ok');
+
+        $stats = $breaker->getStats();
+
+        $this->assertSame(2, $stats['total_calls']);
+        $this->assertSame(2, $stats['successes']);
+        $this->assertSame(0, $stats['failures']);
+        $this->assertNull($stats['last_failure_at']);
+    }
+
+    public function test_get_stats_tracks_failures(): void
+    {
+        $breaker = new CircuitBreaker(
+            'test-service',
+            new CircuitConfig(failureThreshold: 10),
+        );
+
+        $breaker->call(fn () => 'ok');
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        $stats = $breaker->getStats();
+
+        $this->assertSame(3, $stats['total_calls']);
+        $this->assertSame(1, $stats['successes']);
+        $this->assertSame(2, $stats['failures']);
+        $this->assertNotNull($stats['last_failure_at']);
+        $this->assertSame('closed', $stats['current_state']);
+    }
+
+    public function test_get_stats_reflects_open_state(): void
+    {
+        $breaker = new CircuitBreaker(
+            'test-service',
+            new CircuitConfig(failureThreshold: 1, recoveryTimeout: 60),
+        );
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        $stats = $breaker->getStats();
+
+        $this->assertSame(1, $stats['total_calls']);
+        $this->assertSame(0, $stats['successes']);
+        $this->assertSame(1, $stats['failures']);
+        $this->assertSame('open', $stats['current_state']);
+    }
+
+    public function test_get_stats_after_mixed_calls_and_recovery(): void
+    {
+        $breaker = new CircuitBreaker(
+            'test-service',
+            new CircuitConfig(failureThreshold: 1, recoveryTimeout: 0, successThreshold: 1),
+        );
+
+        $breaker->call(fn () => 'ok');
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        // recoveryTimeout=0 transitions to half-open, success closes it
+        $breaker->call(fn () => 'recovered');
+
+        $stats = $breaker->getStats();
+
+        $this->assertSame(3, $stats['total_calls']);
+        $this->assertSame(2, $stats['successes']);
+        $this->assertSame(1, $stats['failures']);
+        $this->assertSame('closed', $stats['current_state']);
+    }
+
+    public function test_fallback_invoked_when_circuit_is_open(): void
+    {
+        $breaker = new CircuitBreaker(
+            'test-service',
+            new CircuitConfig(failureThreshold: 1, recoveryTimeout: 60),
+        );
+        $breaker->setFallback(fn () => 'fallback-value');
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        $this->assertTrue($breaker->isOpen());
+
+        $result = $breaker->call(fn () => 'should not execute');
+
+        $this->assertSame('fallback-value', $result);
+    }
+
+    public function test_fallback_not_invoked_when_circuit_is_closed(): void
+    {
+        $breaker = new CircuitBreaker('test-service');
+        $fallbackCalled = false;
+        $breaker->setFallback(function () use (&$fallbackCalled) {
+            $fallbackCalled = true;
+
+            return 'fallback';
+        });
+
+        $result = $breaker->call(fn () => 'normal');
+
+        $this->assertSame('normal', $result);
+        $this->assertFalse($fallbackCalled);
+    }
+
+    public function test_fallback_counts_toward_total_calls(): void
+    {
+        $breaker = new CircuitBreaker(
+            'test-service',
+            new CircuitConfig(failureThreshold: 1, recoveryTimeout: 60),
+        );
+        $breaker->setFallback(fn () => 'fallback');
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        $breaker->call(fn () => 'ignored');
+
+        $stats = $breaker->getStats();
+
+        $this->assertSame(2, $stats['total_calls']);
+    }
+
+    public function test_fallback_via_builder(): void
+    {
+        $breaker = CircuitBreaker::for('test-service')
+            ->failAfter(1)
+            ->recoverAfter(60)
+            ->fallback(fn () => 'builder-fallback')
+            ->build();
+
+        try {
+            $breaker->call(fn () => throw new RuntimeException('fail'));
+        } catch (RuntimeException) {
+        }
+
+        $result = $breaker->call(fn () => 'should not execute');
+
+        $this->assertSame('builder-fallback', $result);
+    }
 }

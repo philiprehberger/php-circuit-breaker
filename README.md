@@ -80,6 +80,40 @@ $userResult  = $breakers->call('user-api',  fn () => fetchUsers());
 $orderResult = $breakers->call('order-api', fn () => fetchOrders());
 ```
 
+### Fallback
+
+Register a fallback to return a default value when the circuit is open instead of throwing:
+
+```php
+$breaker = CircuitBreaker::for('payment-api')
+    ->failAfter(3)
+    ->recoverAfter(60)
+    ->fallback(fn () => ['status' => 'unavailable'])
+    ->build();
+
+// Returns the fallback value when the circuit is open
+$result = $breaker->call(fn () => callExternalService());
+```
+
+### Stats
+
+Inspect circuit breaker usage statistics at any time:
+
+```php
+$breaker = new CircuitBreaker('payment-api');
+
+$breaker->call(fn () => fetchData());
+
+$stats = $breaker->getStats();
+// [
+//     'total_calls'     => 1,
+//     'successes'       => 1,
+//     'failures'        => 0,
+//     'last_failure_at' => null,
+//     'current_state'   => 'closed',
+// ]
+```
+
 ### Custom Storage Backend
 
 ```php
@@ -113,6 +147,21 @@ class RedisStorage implements Storage
 | `->state(): CircuitState` | Get the current circuit state |
 | `->reset(): void` | Reset the circuit to closed |
 | `->trip(): void` | Manually open the circuit |
+| `->getStats(): array` | Get usage statistics (total calls, successes, failures, last failure timestamp, current state) |
+| `->setFallback(callable $fallback): void` | Register a fallback invoked when the circuit is open |
+
+### CircuitBreakerBuilder
+
+| Method | Description |
+|--------|-------------|
+| `->failAfter(int $failures): self` | Set the failure threshold |
+| `->recoverAfter(int $seconds): self` | Set the recovery timeout |
+| `->succeedAfter(int $successes): self` | Set the success threshold for half-open |
+| `->timeout(float $seconds): self` | Set the call timeout |
+| `->storage(Storage $storage): self` | Set the storage backend |
+| `->fallback(callable $fallback): self` | Register a fallback for when the circuit is open |
+| `->onStateChange(callable $callback): self` | Set a state change callback |
+| `->build(): CircuitBreaker` | Build the configured instance |
 
 ### KeyedCircuitBreaker
 

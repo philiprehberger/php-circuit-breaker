@@ -17,8 +17,19 @@ class CircuitBreaker
     /** @var int Tracks consecutive successes in HalfOpen state. */
     private int $halfOpenSuccesses = 0;
 
+    private int $totalCalls = 0;
+
+    private int $successCount = 0;
+
+    private int $failureCount = 0;
+
+    private ?string $lastFailureAt = null;
+
     /** @var (callable(CircuitEvent, self): void)|null */
     private $onStateChange = null;
+
+    /** @var callable|null */
+    private $fallback = null;
 
     /**
      * Create a new circuit breaker instance.
@@ -55,16 +66,27 @@ class CircuitBreaker
         $state = $this->storage->getState($this->service);
 
         if ($state === CircuitState::Open) {
+            if ($this->fallback !== null) {
+                $this->totalCalls++;
+
+                return ($this->fallback)();
+            }
+
             throw new CircuitOpenException($this->service);
         }
 
+        $this->totalCalls++;
+
         try {
             $result = $this->executeWithTimeout($fn);
+            $this->successCount++;
             $this->recordSuccess();
             $this->emit(CircuitEvent::CallSucceeded);
 
             return $result;
         } catch (Throwable $e) {
+            $this->failureCount++;
+            $this->lastFailureAt = date('Y-m-d\TH:i:sP');
             $this->recordFailure();
             $this->emit(CircuitEvent::CallFailed);
 
@@ -150,6 +172,36 @@ class CircuitBreaker
     public function onStateChange(callable $callback): void
     {
         $this->onStateChange = $callback;
+    }
+
+    /**
+     * Register a fallback callable invoked when the circuit is open instead of throwing.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $fallback
+     */
+    public function setFallback(callable $fallback): void
+    {
+        $this->fallback = $fallback;
+    }
+
+    /**
+     * Get statistics about circuit breaker usage.
+     *
+     * @return array{total_calls: int, successes: int, failures: int, last_failure_at: ?string, current_state: string}
+     */
+    public function getStats(): array
+    {
+        $this->evaluateState();
+
+        return [
+            'total_calls' => $this->totalCalls,
+            'successes' => $this->successCount,
+            'failures' => $this->failureCount,
+            'last_failure_at' => $this->lastFailureAt,
+            'current_state' => $this->storage->getState($this->service)->value,
+        ];
     }
 
     /**

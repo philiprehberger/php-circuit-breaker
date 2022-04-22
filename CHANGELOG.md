@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-22
+
+### Added
+- `getStats()` method on `CircuitBreaker` returning total calls, successes, failures, last failure timestamp, and current state
+- `fallback(callable)` method on `CircuitBreakerBuilder` to register a fallback invoked when the circuit is open instead of throwing `CircuitOpenException`
+- `setFallback(callable)` method on `CircuitBreaker` for direct fallback registration
+
 ## [1.1.2] - 2026-03-20
 
 ### Added
