@@ -1,8 +1,12 @@
 # PHP Circuit Breaker
 
-[![Tests](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml)
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/php-circuit-breaker.svg)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
+[![CI](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml)
+[![Packagist Version](https://img.shields.io/packagist/v/philiprehberger/php-circuit-breaker)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
+[![GitHub Release](https://img.shields.io/github/v/release/philiprehberger/php-circuit-breaker)](https://github.com/philiprehberger/php-circuit-breaker/releases)
+[![Last Updated](https://img.shields.io/github/last-commit/philiprehberger/php-circuit-breaker)](https://github.com/philiprehberger/php-circuit-breaker/commits/main)
 [![License](https://img.shields.io/github/license/philiprehberger/php-circuit-breaker)](LICENSE)
+[![Bug Reports](https://img.shields.io/github/issues/philiprehberger/php-circuit-breaker/bug)](https://github.com/philiprehberger/php-circuit-breaker/issues?q=label%3Abug)
+[![Feature Requests](https://img.shields.io/github/issues/philiprehberger/php-circuit-breaker/enhancement)](https://github.com/philiprehberger/php-circuit-breaker/issues?q=label%3Aenhancement)
 [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Circuit breaker pattern with configurable thresholds and multiple storage backends.
@@ -96,6 +100,45 @@ $breaker = CircuitBreaker::for('payment-api')
 $result = $breaker->call(fn () => callExternalService());
 ```
 
+### Health Check Probes
+
+Register a health check probe for smarter recovery from the Open state:
+
+```php
+$breaker = new CircuitBreaker(
+    service: 'payment-api',
+    config: new CircuitConfig(failureThreshold: 3, recoveryTimeout: 30),
+);
+
+$breaker->setHealthCheck(function (): bool {
+    // Check if the external service is reachable
+    return @file_get_contents('https://api.example.com/health') !== false;
+});
+```
+
+When the recovery timeout elapses, the health check runs before transitioning to HalfOpen. If the probe fails, the recovery timer resets.
+
+### Metrics
+
+Inspect detailed metrics about circuit breaker usage:
+
+```php
+$breaker = new CircuitBreaker('payment-api');
+
+$breaker->call(fn () => fetchData());
+
+$metrics = $breaker->metrics();
+// [
+//     'total_calls'          => 1,
+//     'successful_calls'     => 1,
+//     'failed_calls'         => 0,
+//     'success_rate'         => 1.0,
+//     'current_state'        => 'closed',
+//     'state_changed_at'     => null,
+//     'consecutive_failures' => 0,
+// ]
+```
+
 ### Stats
 
 Inspect circuit breaker usage statistics at any time:
@@ -149,7 +192,9 @@ class RedisStorage implements Storage
 | `->reset(): void` | Reset the circuit to closed |
 | `->trip(): void` | Manually open the circuit |
 | `->getStats(): array` | Get usage statistics (total calls, successes, failures, last failure timestamp, current state) |
+| `->metrics(): array` | Get detailed metrics (total, successful, failed calls, success rate, state, state change time, consecutive failures) |
 | `->setFallback(callable $fallback): void` | Register a fallback invoked when the circuit is open |
+| `->setHealthCheck(callable $probe): self` | Register a health check probe for smarter Open-to-HalfOpen recovery |
 
 ### CircuitBreakerBuilder
 
@@ -189,15 +234,27 @@ class RedisStorage implements Storage
 | `successThreshold` | `int` | `1` | Successes in half-open to close |
 | `timeout` | `?float` | `null` | Optional call timeout in seconds |
 
+### Storage Backends
+
+| Class | Description |
+|-------|-------------|
+| `InMemoryStorage` | In-memory, scoped to the current process |
+| `FileStorage` | JSON file-based, persists across requests |
+| `SlidingWindowStorage` | Time-window-based failure tracking with automatic pruning |
+
 ## Development
 
 ```bash
 composer install
 vendor/bin/phpunit
 vendor/bin/pint --test
-vendor/bin/phpstan analyse
 ```
+
+## Support
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Philip%20Rehberger-blue?logo=linkedin)](https://www.linkedin.com/in/philiprehberger/)
+[![Packages](https://img.shields.io/badge/All%20Packages-philiprehberger.com-blue)](https://philiprehberger.com)
 
 ## License
 
-MIT
+[MIT](LICENSE)

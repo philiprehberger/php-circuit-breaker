@@ -25,11 +25,16 @@ class CircuitBreaker
 
     private ?string $lastFailureAt = null;
 
+    private ?float $stateChangedAt = null;
+
     /** @var (callable(CircuitEvent, self): void)|null */
     private $onStateChange = null;
 
     /** @var callable|null */
     private $fallback = null;
+
+    /** @var callable|null */
+    private $healthCheck = null;
 
     /**
      * Create a new circuit breaker instance.
@@ -145,6 +150,7 @@ class CircuitBreaker
         $this->halfOpenSuccesses = 0;
 
         if ($previousState !== CircuitState::Closed) {
+            $this->stateChangedAt = microtime(true);
             $this->emit(CircuitEvent::Closed);
         }
     }
@@ -160,6 +166,7 @@ class CircuitBreaker
         $this->halfOpenSuccesses = 0;
 
         if ($previousState !== CircuitState::Open) {
+            $this->stateChangedAt = microtime(true);
             $this->emit(CircuitEvent::Opened);
         }
     }
@@ -184,6 +191,46 @@ class CircuitBreaker
     public function setFallback(callable $fallback): void
     {
         $this->fallback = $fallback;
+    }
+
+    /**
+     * Register a health check probe for smarter recovery from the Open state.
+     *
+     * When set, the circuit will run this probe before transitioning from Open to HalfOpen.
+     * If the probe returns true (or doesn't throw), the circuit transitions to HalfOpen.
+     * If the probe throws or returns false, the recovery timer is reset.
+     *
+     * @param  callable(): bool  $probe
+     */
+    public function setHealthCheck(callable $probe): self
+    {
+        $this->healthCheck = $probe;
+
+        return $this;
+    }
+
+    /**
+     * Get metrics about circuit breaker usage.
+     *
+     * @return array{total_calls: int, successful_calls: int, failed_calls: int, success_rate: float, current_state: string, state_changed_at: ?float, consecutive_failures: int}
+     */
+    public function metrics(): array
+    {
+        $this->evaluateState();
+
+        $successRate = $this->totalCalls > 0
+            ? $this->successCount / $this->totalCalls
+            : 0.0;
+
+        return [
+            'total_calls' => $this->totalCalls,
+            'successful_calls' => $this->successCount,
+            'failed_calls' => $this->failureCount,
+            'success_rate' => $successRate,
+            'current_state' => $this->storage->getState($this->service)->value,
+            'state_changed_at' => $this->stateChangedAt,
+            'consecutive_failures' => $this->storage->getFailureCount($this->service),
+        ];
     }
 
     /**
@@ -222,8 +269,24 @@ class CircuitBreaker
         }
 
         if ((microtime(true) - $lastFailure) >= $this->config->recoveryTimeout) {
+            if ($this->healthCheck !== null) {
+                try {
+                    $result = ($this->healthCheck)();
+                    if ($result === false) {
+                        $this->storage->setLastFailureTime($this->service, microtime(true));
+
+                        return;
+                    }
+                } catch (Throwable) {
+                    $this->storage->setLastFailureTime($this->service, microtime(true));
+
+                    return;
+                }
+            }
+
             $this->storage->setState($this->service, CircuitState::HalfOpen);
             $this->halfOpenSuccesses = 0;
+            $this->stateChangedAt = microtime(true);
             $this->emit(CircuitEvent::HalfOpened);
         }
     }
@@ -242,6 +305,7 @@ class CircuitBreaker
                 $this->storage->setState($this->service, CircuitState::Closed);
                 $this->storage->resetFailures($this->service);
                 $this->halfOpenSuccesses = 0;
+                $this->stateChangedAt = microtime(true);
                 $this->emit(CircuitEvent::Closed);
             }
         }
@@ -260,6 +324,7 @@ class CircuitBreaker
         if ($state === CircuitState::HalfOpen) {
             $this->storage->setState($this->service, CircuitState::Open);
             $this->halfOpenSuccesses = 0;
+            $this->stateChangedAt = microtime(true);
             $this->emit(CircuitEvent::Opened);
 
             return;
@@ -268,6 +333,7 @@ class CircuitBreaker
         if ($failures >= $this->config->failureThreshold) {
             $this->storage->setState($this->service, CircuitState::Open);
             $this->halfOpenSuccesses = 0;
+            $this->stateChangedAt = microtime(true);
             $this->emit(CircuitEvent::Opened);
         }
     }

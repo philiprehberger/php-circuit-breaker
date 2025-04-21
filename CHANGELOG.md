@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-03-27
+
+### Added
+- `SlidingWindowStorage` for time-window-based failure tracking
+- Health check probes via `setHealthCheck()` for smarter recovery
+- `metrics()` method for circuit breaker observability
+
 ## [1.2.0] - 2026-03-22
 
 ### Added
