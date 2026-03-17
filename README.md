@@ -2,12 +2,9 @@
 
 [![Tests](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/php-circuit-breaker.svg)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
-[![PHP Version Require](https://img.shields.io/packagist/php-v/philiprehberger/php-circuit-breaker.svg)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
 [![License](https://img.shields.io/github/license/philiprehberger/php-circuit-breaker)](LICENSE)
 
 Circuit breaker pattern with configurable thresholds and multiple storage backends.
-
----
 
 ## Requirements
 
@@ -15,15 +12,11 @@ Circuit breaker pattern with configurable thresholds and multiple storage backen
 |------------|---------|
 | PHP        | ^8.2    |
 
----
-
 ## Installation
 
 ```bash
 composer require philiprehberger/php-circuit-breaker
 ```
-
----
 
 ## Usage
 
@@ -73,7 +66,7 @@ try {
 
 ### Per-Key Circuit Breakers
 
-Use `KeyedCircuitBreaker` to manage independent circuit breakers per key (e.g., per endpoint, per tenant):
+Use `KeyedCircuitBreaker` to manage independent circuit breakers per key:
 
 ```php
 use PhilipRehberger\CircuitBreaker\KeyedCircuitBreaker;
@@ -85,50 +78,11 @@ $breakers = new KeyedCircuitBreaker(
     storage: new InMemoryStorage(),
 );
 
-// Each key gets its own independent circuit breaker
-$userResult = $breakers->call('user-api', fn () => fetchUsers());
+$userResult  = $breakers->call('user-api',  fn () => fetchUsers());
 $orderResult = $breakers->call('order-api', fn () => fetchOrders());
-
-// Check state or reset individual keys
-$breakers->state('user-api');   // CircuitState::Closed
-$breakers->isOpen('order-api'); // false
-$breakers->reset('user-api');
-$breakers->remove('order-api');
-
-// List all tracked keys
-$breakers->keys();  // ['user-api']
-$breakers->count(); // 1
-```
-
-### Checking State
-
-```php
-if ($breaker->isOpen()) {
-    // Use cached/fallback response
-}
-
-$state = $breaker->state(); // CircuitState::Closed, Open, or HalfOpen
-```
-
-### Manual Control
-
-```php
-$breaker->trip();  // Force the circuit open
-$breaker->reset(); // Reset to closed state
-```
-
-### File-Based Storage
-
-```php
-use PhilipRehberger\CircuitBreaker\Storage\FileStorage;
-
-// State persists across requests via JSON files
-$storage = new FileStorage('/tmp/circuit-breaker');
 ```
 
 ### Custom Storage Backend
-
-Implement the `Storage` interface for Redis, APCu, database, or any other backend:
 
 ```php
 use PhilipRehberger\CircuitBreaker\Contracts\Storage;
@@ -146,9 +100,9 @@ class RedisStorage implements Storage
 }
 ```
 
----
-
 ## API
+
+### CircuitBreaker
 
 | Method | Description |
 |--------|-------------|
@@ -187,35 +141,15 @@ class RedisStorage implements Storage
 | `successThreshold` | `int` | `1` | Successes in half-open to close |
 | `timeout` | `?float` | `null` | Optional call timeout in seconds |
 
----
-
-## Testing
+## Development
 
 ```bash
 composer install
 vendor/bin/phpunit
-```
-
-Code style:
-
-```bash
-vendor/bin/pint
-```
-
-Static analysis:
-
-```bash
+vendor/bin/pint --test
 vendor/bin/phpstan analyse
 ```
 
----
-
-## Changelog
-
-Please see [CHANGELOG.md](CHANGELOG.md) for recent changes.
-
----
-
 ## License
 
-The MIT License (MIT). Please see [LICENSE](LICENSE) for more information.
+MIT
