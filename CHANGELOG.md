@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-03-20
+
+### Added
+- Expanded test suite with dedicated tests for KeyedCircuitBreaker and FileStorage
+
 ## [1.1.1] - 2026-03-17
 
 ### Changed
