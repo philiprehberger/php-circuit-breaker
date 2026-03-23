@@ -26,6 +26,9 @@ class CircuitBreakerBuilder
     /** @var (callable(CircuitEvent, CircuitBreaker): void)|null */
     private $stateChangeCallback = null;
 
+    /** @var callable|null */
+    private $fallback = null;
+
     /**
      * Create a new builder instance.
      */
@@ -84,6 +87,20 @@ class CircuitBreakerBuilder
     }
 
     /**
+     * Register a fallback callable invoked when the circuit is open instead of throwing.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $fallback
+     */
+    public function fallback(callable $fallback): self
+    {
+        $this->fallback = $fallback;
+
+        return $this;
+    }
+
+    /**
      * Set a callback for state change events.
      *
      * @param  callable(CircuitEvent, CircuitBreaker): void  $callback
@@ -115,6 +132,10 @@ class CircuitBreakerBuilder
 
         if ($this->stateChangeCallback !== null) {
             $breaker->onStateChange($this->stateChangeCallback);
+        }
+
+        if ($this->fallback !== null) {
+            $breaker->setFallback($this->fallback);
         }
 
         return $breaker;
