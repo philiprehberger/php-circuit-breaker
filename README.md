@@ -3,6 +3,7 @@
 [![Tests](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/php-circuit-breaker.svg)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
 [![License](https://img.shields.io/github/license/philiprehberger/php-circuit-breaker)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Circuit breaker pattern with configurable thresholds and multiple storage backends.
 
