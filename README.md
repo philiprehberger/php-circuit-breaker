@@ -1,13 +1,8 @@
 # PHP Circuit Breaker
 
-[![CI](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml)
-[![Packagist Version](https://img.shields.io/packagist/v/philiprehberger/php-circuit-breaker)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
-[![GitHub Release](https://img.shields.io/github/v/release/philiprehberger/php-circuit-breaker)](https://github.com/philiprehberger/php-circuit-breaker/releases)
-[![Last Updated](https://img.shields.io/github/last-commit/philiprehberger/php-circuit-breaker)](https://github.com/philiprehberger/php-circuit-breaker/commits/main)
-[![License](https://img.shields.io/github/license/philiprehberger/php-circuit-breaker)](LICENSE)
-[![Bug Reports](https://img.shields.io/github/issues/philiprehberger/php-circuit-breaker/bug)](https://github.com/philiprehberger/php-circuit-breaker/issues?q=label%3Abug)
-[![Feature Requests](https://img.shields.io/github/issues/philiprehberger/php-circuit-breaker/enhancement)](https://github.com/philiprehberger/php-circuit-breaker/issues?q=label%3Aenhancement)
-[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
+[![Tests](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/php-circuit-breaker/actions/workflows/tests.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/php-circuit-breaker.svg)](https://packagist.org/packages/philiprehberger/php-circuit-breaker)
+[![Last updated](https://img.shields.io/github/last-commit/philiprehberger/php-circuit-breaker)](https://github.com/philiprehberger/php-circuit-breaker/commits/main)
 
 Circuit breaker pattern with configurable thresholds and multiple storage backends.
 
@@ -252,8 +247,21 @@ vendor/bin/pint --test
 
 ## Support
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Philip%20Rehberger-blue?logo=linkedin)](https://www.linkedin.com/in/philiprehberger/)
-[![Packages](https://img.shields.io/badge/All%20Packages-philiprehberger.com-blue)](https://philiprehberger.com)
+If you find this project useful:
+
+⭐ [Star the repo](https://github.com/philiprehberger/php-circuit-breaker)
+
+🐛 [Report issues](https://github.com/philiprehberger/php-circuit-breaker/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+
+💡 [Suggest features](https://github.com/philiprehberger/php-circuit-breaker/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+
+❤️ [Sponsor development](https://github.com/sponsors/philiprehberger)
+
+🌐 [All Open Source Projects](https://philiprehberger.com/open-source-packages)
+
+💻 [GitHub Profile](https://github.com/philiprehberger)
+
+🔗 [LinkedIn Profile](https://www.linkedin.com/in/philiprehberger)
 
 ## License
 
